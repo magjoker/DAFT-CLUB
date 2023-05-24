@@ -1,5 +1,5 @@
 {
-  "name": "28-Stu_Mini-Project",
+  "name": "DAFT-CLUB",
   "version": "1.0.1",
   "description": "Mongoose back-end project - Main",
   "main": "index.js",
@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "express": "^4.17.1",
-    "mongoose": "^7.0.2"
+    "mongoose": "^7.2.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.9"
+    "nodemon": "^2.0.22"
   }
 }

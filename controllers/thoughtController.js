@@ -1,96 +1,87 @@
 const { ObjectId } = require('mongoose').Types;
-const { Student, Course } = require('../models');
+const { Thought, User } = require('../models');
 
-// Aggregate function to get the number of students overall
-const headCount = async () => {
-  const numberOfStudents = await Student.aggregate()
-    .count('studentCount');
-  return numberOfStudents;
-}
 
-// Aggregate function for getting the overall grade using $avg
-const grade = async (studentId) =>
-  Student.aggregate([
-    // only include the given student by using $match
-    { $match: { _id: new ObjectId(studentId) } },
-    {
-      $unwind: '$assignments',
-    },
-    {
-      $group: {
-        _id: new ObjectId(studentId),
-        overallGrade: { $avg: '$assignments.score' },
-      },
-    },
-  ]);
-
+//
 module.exports = {
-  // Get all students
-  async getStudents(req, res) {
+  // Acquires all thoughts
+  async acquireThoughts(req, res) {
     try {
-      const students = await Student.find();
+      const thoughtBytes = await Thought.find();
 
-      const studentObj = {
-        students,
-        headCount: await headCount(),
-      };
-
-      res.json(studentObj);
+      res.json(thoughtBytes);
     } catch (err) {
       console.log(err);
       return res.status(500).json(err);
     }
   },
-  // Get a single student
-  async getSingleStudent(req, res) {
+  // Gets one thought
+  async onlyOneThought(req, res) {
     try {
-      const student = await Student.findOne({ _id: req.params.studentId })
+      const thoughtBytes = await Thought.findOne({ _id: req.params.thoughtId })
         .select('-__v');
 
-      if (!student) {
-        return res.status(404).json({ message: 'No student with that ID' })
+      if (!thoughtBytes) {
+        return res.status(404).json({ message: 'No thought with that ID' })
       }
 
-      res.json({
-        student,
-        grade: await grade(req.params.studentId),
-      });
+      res.json(thoughtBytes);
     } catch (err) {
       console.log(err);
       return res.status(500).json(err);
     }
   },
   // create a new student
-  async createStudent(req, res) {
+  async createThought(req, res) {
     try {
-      const student = await Student.create(req.body);
-      res.json(student);
+      const thoughtBytes = await Thought.create(req.body);
+      res.json(thoughtBytes);
     } catch (err) {
       res.status(500).json(err);
     }
   },
-  // Delete a student and remove them from the course
-  async deleteStudent(req, res) {
-    try {
-      const student = await Student.findOneAndRemove({ _id: req.params.studentId });
 
-      if (!student) {
-        return res.status(404).json({ message: 'No such student exists' });
+  //Updates a thought
+  async updateThought(req, res) {
+    try {
+      const thoughtBytes = await Thought.findOneAndUpdate(
+        { _id: req.params.thoughtId },
+        { $set: req.body },
+        { runValidators: true, new: true }
+      );
+
+      if (!thoughtBytes) {
+        res.status(404).json({ message: 'No thought with this id!' });
       }
 
-      const course = await Course.findOneAndUpdate(
-        { students: req.params.studentId },
-        { $pull: { students: req.params.studentId } },
+      res.json(thoughtBytes);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  },
+
+  // Delete a student and remove them from the course
+  async deleteThought(req, res) {
+    try {
+      const thoughtBytes = await Thought.findOneAndRemove({ _id: req.params.thoughtId });
+
+      if (!thoughtBytes) {
+        return res.status(404).json({ message: 'No such thought exists' });
+      }
+
+      const userBytes = await User.findOneAndUpdate(
+        { thoughts: req.params.thoughtId },
+        { $pull: { thoughts: req.params.thoughtId } },
         { new: true }
       );
 
-      if (!course) {
+      if (!userBytes) {
         return res.status(404).json({
-          message: 'Student deleted, but no courses found',
+          message: 'Thought deleted, but no user found',
         });
       }
 
-      res.json({ message: 'Student successfully deleted' });
+      res.json({ message: 'Thought successfully deleted' });
     } catch (err) {
       console.log(err);
       res.status(500).json(err);
@@ -98,44 +89,44 @@ module.exports = {
   },
 
   // Add an assignment to a student
-  async addAssignment(req, res) {
-    console.log('You are adding an assignment');
+  async addReaction(req, res) {
+    console.log('You are adding a reaction');
     console.log(req.body);
 
     try {
-      const student = await Student.findOneAndUpdate(
-        { _id: req.params.studentId },
-        { $addToSet: { assignments: req.body } },
+      const thoughtBytes = await Thought.findOneAndUpdate(
+        { _id: req.params.thoughtId },
+        { $addToSet: { reactions: req.body } },
         { runValidators: true, new: true }
       );
 
-      if (!student) {
+      if (!thoughtBytes) {
         return res
           .status(404)
-          .json({ message: 'No student found with that ID :(' });
+          .json({ message: 'No reaction found with that ID :(' });
       }
 
-      res.json(student);
+      res.json(thoughtBytes);
     } catch (err) {
       res.status(500).json(err);
     }
   },
   // Remove assignment from a student
-  async removeAssignment(req, res) {
+  async removeReaction(req, res) {
     try {
-      const student = await Student.findOneAndUpdate(
-        { _id: req.params.studentId },
-        { $pull: { assignment: { assignmentId: req.params.assignmentId } } },
+      const thoughtBytes = await Thought.findOneAndUpdate(
+        { _id: req.params.thoughtId },
+        { $pull: { reactions: { reactionId: req.params.reactionId } } },
         { runValidators: true, new: true }
       );
 
-      if (!student) {
+      if (!thoughtBytes) {
         return res
           .status(404)
-          .json({ message: 'No student found with that ID :(' });
+          .json({ message: 'No reaction found with that ID :(' });
       }
 
-      res.json(student);
+      res.json(thoughtBytes);
     } catch (err) {
       res.status(500).json(err);
     }

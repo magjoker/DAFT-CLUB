@@ -10,10 +10,10 @@ const userSchema = new Schema(
       trim: true
     },
     email: {
-      type: Boolean,
+      type: String,
       required: true,
       unique: true,
-      match: [/\w+@\w+.\w{2,3}+/, "Invalid email"]
+      match: [/\w+@\w+(\.\w{2,3})+/, "Invalid email"]
     },
     thoughts: [
       {
@@ -40,6 +40,6 @@ userSchema.virtual("friendCount").get(function () {
   return this.friends.length
 })
 
-const User = model('user', userSchema);
+const User = model('User', userSchema);
 
 module.exports = User;
